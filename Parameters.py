@@ -20,7 +20,7 @@ ROBUSTNESS_EPISODES_PER_SETTING = 100
 # RUN_MODE = "TRAIN"  # 设为 "TRAIN" 进行训练
 RUN_MODE = "TEST"     # 设为 "TEST" 进行可扩展性测试
 
-USE_DUELING_DQN = True  # 启用双头架构
+USE_DUELING_DQN = True # 启用双头架构
 
 # GNN
 USE_GNN_ENHANCEMENT = True # GNN增强开关
@@ -198,10 +198,7 @@ TRANSMITTDE_POWER = 3  # 保持，但将在新模型中使用
 
 # 双头DQN网络结构参数
 DUELING_HIDDEN_RATIO = 0.5  # 隐藏层比例
-if USE_DUELING_DQN:
-    RL_N_HIDDEN = RL_N_ACTIONS * 3  # 为双流提供更多容量
-else:
-    RL_N_HIDDEN = RL_N_ACTIONS * 2  # 原有配置
+RL_N_HIDDEN = RL_N_ACTIONS * 3  # 默认值 (将被 Topology.py 动态覆盖)
 
 # 优先级经验回放参数
 PER_CAPACITY = 10000  # 经验回放缓冲区容量

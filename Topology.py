@@ -5,9 +5,10 @@ from Parameters import (
     RL_N_STATES, RL_N_HIDDEN, RL_N_ACTIONS, SCENE_SCALE_X, SCENE_SCALE_Y,
     VEHICLE_SAFETY_DISTANCE, DIRECTION_H_RIGHT, DIRECTION_H_STEADY, DIRECTION_H_LEFT,
     DIRECTION_V_UP, DIRECTION_V_STEADY, DIRECTION_V_DOWN, BOUNDARY_POSITION_LIST,
-    VEHICLE_OCCUR_PROB, USE_UMI_NLOS_MODEL, ANTENNA_HEIGHT_BS, USE_DUELING_DQN,VEHICLE_SPEED_KMH,
+    VEHICLE_OCCUR_PROB, USE_UMI_NLOS_MODEL, ANTENNA_HEIGHT_BS, VEHICLE_SPEED_KMH,
     TRAINING_VEHICLE_TARGET
 )
+import Parameters
 #from Classes import Vehicle # 只导入 Vehicle
 from logger import debug, debug_print
 
@@ -19,12 +20,21 @@ def formulate_global_list_dqn(dqn_list, device):
     # <<< 在函数内部导入 DQN 类，避免循环导入问题 >>>
     from Classes import DQN, DuelingDQN
 
-    if USE_DUELING_DQN:
+    # --- 新增：在这里根据 Parameters 的 *当前* 状态动态计算 RL_N_HIDDEN ---
+    local_rl_n_hidden = 0
+    if Parameters.USE_DUELING_DQN:
         DQNClass = DuelingDQN
+        local_rl_n_hidden = RL_N_ACTIONS * 3  # 双头DQN的隐藏层大小
         debug_print("Creating Dueling DQN instances with value-advantage architecture...")
     else:
         DQNClass = DQN
+        local_rl_n_hidden = RL_N_ACTIONS * 2  # 标准DQN的隐藏层大小
         debug_print("Creating traditional DQN instances...")
+
+    # --- 确保 local_rl_n_hidden 被设置 ---
+    if local_rl_n_hidden == 0:
+        debug_print("!!! 错误: local_rl_n_hidden 未被设置!")
+        return
 
     dqn_list.clear()
 
@@ -45,15 +55,15 @@ def formulate_global_list_dqn(dqn_list, device):
     for i in range(1, 11):
         start_x, start_y, end_x, end_y = coords[i]
 
-        # 1. 创建在线网络 (主网络)
+        # 1. 创建在线网络 (使用 local_rl_n_hidden)
         dqn_eval = DQNClass(
-            RL_N_STATES, RL_N_HIDDEN, RL_N_ACTIONS, dqn_id=i,
+            RL_N_STATES, local_rl_n_hidden, RL_N_ACTIONS, dqn_id=i,
             start_x=start_x, start_y=start_y, end_x=end_x, end_y=end_y,
         ).to(device)
 
         # 2. 创建目标网络 (结构相同，但不参与训练)
         dqn_target = DQNClass(
-             RL_N_STATES, RL_N_HIDDEN, RL_N_ACTIONS, dqn_id=i, # ID 可以相同或不同
+             RL_N_STATES, local_rl_n_hidden, RL_N_ACTIONS, dqn_id=i,
              start_x=start_x, start_y=start_y, end_x=end_x, end_y=end_y,
         ).to(device)
 
@@ -72,8 +82,8 @@ def formulate_global_list_dqn(dqn_list, device):
     if dqn_list:
         sample_dqn = dqn_list[0]
         debug_print(f"Network architecture: {type(sample_dqn).__name__}")
-        debug_print(f"Input dim: {RL_N_STATES}, Hidden dim: {RL_N_HIDDEN}, Output dim: {RL_N_ACTIONS}")
-        if USE_DUELING_DQN:
+        debug_print(f"Input dim: {RL_N_STATES}, Hidden dim: {local_rl_n_hidden}, Output dim: {RL_N_ACTIONS}")
+        if Parameters.USE_DUELING_DQN:
             debug_print("Value-Advantage streams enabled")
 
 

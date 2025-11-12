@@ -666,15 +666,28 @@ def rl(mean_loss_across_epochs=None, gnn_optimizer=None):
 
             try:
                 if USE_GNN_ENHANCEMENT:
-                    model_save_path = "model_GNN_DRL_v1.pth"
+                    # 1. 保存 GNN-DRL 模型
+                    model_save_path = MODEL_PATH_GNN
                     save_data = global_gnn_model.state_dict()
                     torch.save(save_data, model_save_path)
                     debug_print(f"GNN-DRL Model saved to {model_save_path}")
+
                 else:
-                    model_save_path = "model_NoGNN_Baseline_v2.pth"
-                    save_data = {f'dqn_{dqn.dqn_id}': dqn.state_dict() for dqn in global_dqn_list}
-                    torch.save(save_data, model_save_path)
-                    debug_print(f"Fixed No-GNN Baseline Model saved to {model_save_path}")
+                    # 2. 非 GNN 模型：需要进一步区分
+                    if USE_DUELING_DQN:
+                        # 2a. 保存 No-GNN DRL (Dueling) 模型
+                        model_save_path = MODEL_PATH_NO_GNN
+                        save_data = {f'dqn_{dqn.dqn_id}': dqn.state_dict() for dqn in global_dqn_list}
+                        torch.save(save_data, model_save_path)
+                        debug_print(f"No-GNN DRL Model saved to {model_save_path}")
+
+                    else:
+                        # 2b. 保存 Standard DQN (非 Dueling) 模型
+                        model_save_path = MODEL_PATH_DQN
+                        save_data = {f'dqn_{dqn.dqn_id}': dqn.state_dict() for dqn in global_dqn_list}
+                        torch.save(save_data, model_save_path)
+                        debug_print(f"Standard DQN Model saved to {model_save_path}")
+
             except Exception as e:
                 debug_print(f"Error saving model: {e}")
             break
